@@ -222,21 +222,21 @@ export default function FactionSelection({ onFactionSelect }) {
       </Subtitle>
       
       <FactionContainer>
-        <FactionButton onClick={() => handleFactionSelect('alliance')}>
-          <FactionIcon src={allianceIcon} alt="Alianza" />
-          <FactionName>ALIANZA</FactionName>
-          <FactionDescription>
-            HONOR, JUSTICIA Y UNIDAD 
-            ENTRE LAS RAZAS NOBLES
-          </FactionDescription>
-        </FactionButton>
-        
         <FactionButton onClick={() => handleFactionSelect('horde')}>
           <FactionIcon src={hordeIcon} alt="Horda" />
           <FactionName>HORDA</FactionName>
           <FactionDescription>
             FUERZA, SUPERVIVENCIA Y EL 
             PODER DE LOS CLANES UNIDOS
+          </FactionDescription>
+        </FactionButton>
+        
+        <FactionButton onClick={() => handleFactionSelect('alliance')}>
+          <FactionIcon src={allianceIcon} alt="Alianza" />
+          <FactionName>ALIANZA</FactionName>
+          <FactionDescription>
+            HONOR, JUSTICIA Y UNIDAD 
+            ENTRE LAS RAZAS NOBLES
           </FactionDescription>
         </FactionButton>
       </FactionContainer>
