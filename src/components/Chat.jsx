@@ -247,7 +247,7 @@ const Chat = ({ faction, onChangeFaction, onReturnHome }) => {
   const [error, setError] = useState(null);
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef(null);
-  const API_URL = import.meta.env.VITE_API_URL || 'https://wow-backend-teal.vercel.app/api';
+  const API_URL = 'https://wow-backend-teal.vercel.app/api';
 
   useEffect(() => {
     loadConversation();
@@ -255,13 +255,27 @@ const Chat = ({ faction, onChangeFaction, onReturnHome }) => {
 
   const loadConversation = async () => {
     try {
-      const response = await axios.get(`${API_URL}/chat/conversation`);
-      if (response.data.messages) {
+      const response = await axios.get(`${API_URL}/chat/conversation`, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
+      });
+      
+      if (response.data && response.data.messages) {
         setMessages(response.data.messages);
+      } else {
+        setMessages([]);
       }
     } catch (error) {
       console.error('Error al cargar la conversación:', error);
-      setError('Error al cargar el historial de la conversación');
+      if (error.response) {
+        setError(`Error al cargar el historial: ${error.response.status} - ${error.response.statusText}`);
+      } else if (error.request) {
+        setError('No se pudo conectar con el servidor. Por favor, verifica tu conexión.');
+      } else {
+        setError('Error al cargar el historial de la conversación');
+      }
     }
   };
 
@@ -290,17 +304,31 @@ const Chat = ({ faction, onChangeFaction, onReturnHome }) => {
     try {
       const response = await axios.post(`${API_URL}/chat/send`, {
         message: input
+      }, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
       });
 
-      const botMessage = {
-        role: 'assistant',
-        content: response.data.response
-      };
-
-      setMessages(prev => [...prev, botMessage]);
+      if (response.data && response.data.response) {
+        const botMessage = {
+          role: 'assistant',
+          content: response.data.response
+        };
+        setMessages(prev => [...prev, botMessage]);
+      } else {
+        throw new Error('Respuesta inválida del servidor');
+      }
     } catch (error) {
       console.error('Error al enviar mensaje:', error);
-      setError('Error al enviar el mensaje. Por favor, intenta de nuevo.');
+      if (error.response) {
+        setError(`Error al enviar el mensaje: ${error.response.status} - ${error.response.statusText}`);
+      } else if (error.request) {
+        setError('No se pudo conectar con el servidor. Por favor, verifica tu conexión.');
+      } else {
+        setError('Error al enviar el mensaje. Por favor, intenta de nuevo.');
+      }
     } finally {
       setIsTyping(false);
     }
