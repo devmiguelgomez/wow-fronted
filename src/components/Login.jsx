@@ -4,23 +4,144 @@ import styled, { keyframes } from 'styled-components';
 import '@fontsource/cinzel';
 
 const fadeIn = keyframes`
-  0% { opacity: 0; }
-  100% { opacity: 1; }
+  0% { opacity: 0; transform: translateY(20px); }
+  100% { opacity: 1; transform: translateY(0); }
 `;
 
-const AuthContainer = styled.div`
+const FormContainer = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   min-height: 100vh;
   width: 100%;
-  background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)),
+  background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)),
               url('/zGg9N1o.jpg') center/cover no-repeat;
   background-attachment: fixed;
-  font-family: 'Cinzel', serif;
-  color: #FFD100; // Color general, aunque el texto del formulario puede ser diferente
   animation: ${fadeIn} 1s ease-out;
+  color: #FFD100;
+  font-family: 'Cinzel', serif;
+  padding: 20px;
+  text-align: center;
+`;
+
+const FormBox = styled.div`
+  background: rgba(0, 0, 0, 0.9);
+  padding: 40px;
+  border-radius: 12px;
+  box-shadow: 0 0 30px rgba(255, 209, 0, 0.3);
+  width: 100%;
+  max-width: 400px;
+  border: 2px solid #FFD100;
+  animation: ${fadeIn} 0.8s ease-out;
+`;
+
+const Title = styled.h2`
+  font-size: 2rem;
+  font-weight: bold;
+  color: #FFD100;
+  margin-bottom: 30px;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+  background: linear-gradient(45deg, #FFD100, #FFA500);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+`;
+
+const InputGroup = styled.div`
+  margin-bottom: 20px;
+  text-align: left;
+`;
+
+const Label = styled.label`
+  display: block;
+  color: #FFD100;
+  margin-bottom: 8px;
+  font-weight: bold;
+`;
+
+const Input = styled.input`
+  width: 100%;
+  padding: 12px;
+  border-radius: 8px;
+  border: 2px solid #FFD100;
+  background: rgba(0, 0, 0, 0.7);
+  color: #FFD100;
+  font-family: 'Cinzel', serif;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+
+  &:focus {
+    outline: none;
+    box-shadow: 0 0 15px rgba(255, 209, 0, 0.5);
+    background: rgba(0, 0, 0, 0.8);
+  }
+
+  &::placeholder {
+    color: rgba(255, 209, 0, 0.6);
+  }
+`;
+
+const Button = styled.button`
+  width: 100%;
+  background: linear-gradient(45deg, #FFD100, #FFA500);
+  border: none;
+  color: #000;
+  padding: 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: 'Cinzel', serif;
+  font-weight: bold;
+  font-size: 1.1rem;
+  transition: all 0.3s ease;
+  margin-top: 10px;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(255, 209, 0, 0.4);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
+`;
+
+const ErrorMessage = styled.div`
+  background: rgba(139, 0, 0, 0.9);
+  color: #ffcccc;
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  border: 1px solid #ff6b6b;
+  font-size: 0.9rem;
+`;
+
+const LinkText = styled.p`
+  margin-top: 25px;
+  text-align: center;
+  color: #FFD100;
+  opacity: 0.9;
+`;
+
+const StyledLinkButton = styled.button`
+  background: none;
+  border: none;
+  color: #FFA500;
+  cursor: pointer;
+  font-family: 'Cinzel', serif;
+  font-size: 1rem;
+  text-decoration: underline;
+  transition: color 0.3s ease;
+
+  &:hover {
+    color: #FFD100;
+  }
 `;
 
 const Login = () => {
@@ -47,71 +168,60 @@ const Login = () => {
         throw new Error(data.message || 'Error en el login');
       }
 
-      // Guardar token y datos del usuario
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
       
-      // Redirigir a la ruta principal (/), que manejará la selección de facción
-      navigate('/');
+      // Redirigir a la ruta principal que maneja la selección de facción
+      navigate('/'); 
     } catch (err) {
       setError(err.message);
     }
   };
 
   return (
-    <AuthContainer>
-      <div className="bg-gray-800 p-8 rounded-lg shadow-lg w-96">
-        <h2 className="text-2xl font-bold text-white mb-6 text-center">Iniciar Sesión</h2>
+    <FormContainer>
+      <FormBox>
+        <Title>Iniciar Sesión</Title>
         {error && (
-          <div className="bg-red-500 text-white p-3 rounded mb-4">
+          <ErrorMessage>
             {error}
-          </div>
+          </ErrorMessage>
         )}
         <form onSubmit={handleSubmit}>
-          <div className="mb-4">
-            <label className="block text-gray-300 mb-2" htmlFor="email">
-              Email
-            </label>
-            <input
+          <InputGroup>
+            <Label htmlFor="email">Email</Label>
+            <Input
               type="email"
               id="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full p-2 rounded bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:outline-none"
               required
             />
-          </div>
-          <div className="mb-6">
-            <label className="block text-gray-300 mb-2" htmlFor="password">
-              Contraseña
-            </label>
-            <input
+          </InputGroup>
+          <InputGroup>
+            <Label htmlFor="password">Contraseña</Label>
+            <Input
               type="password"
               id="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full p-2 rounded bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:outline-none"
               required
             />
-          </div>
-          <button
-            type="submit"
-            className="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700 transition-colors"
-          >
+          </InputGroup>
+          <Button type="submit">
             Iniciar Sesión
-          </button>
+          </Button>
         </form>
-        <p className="mt-4 text-center text-gray-400">
+        <LinkText>
           ¿No tienes cuenta?{' '}
-          <button
+          <StyledLinkButton
             onClick={() => navigate('/register')}
-            className="text-blue-400 hover:text-blue-300"
           >
             Regístrate
-          </button>
-        </p>
-      </div>
-    </AuthContainer>
+          </StyledLinkButton>
+        </LinkText>
+      </FormBox>
+    </FormContainer>
   );
 };
 

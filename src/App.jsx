@@ -45,20 +45,7 @@ const AppContainer = styled.div`
 
 const PrivateRoute = ({ children }) => {
   const token = localStorage.getItem('token');
-  const location = useLocation();
-  const navigate = useNavigate();
-
-  if (!token) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
-  }
-
-  const selectedFaction = localStorage.getItem('wowSelectedFaction');
-
-  if (!selectedFaction && location.pathname !== '/') {
-    return <Navigate to="/" state={{ from: location }} replace />;
-  }
-
-  return children;
+  return token ? children : <Navigate to="/login" />;
 };
 
 const App = () => {
