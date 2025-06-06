@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import styled, { keyframes } from 'styled-components';
 import axios from 'axios';
-import { v4 as uuidv4 } from 'uuid';
 import '@fontsource/cinzel';
 import hordeIcon from '../assets/horde-icon.png';
 import allianceIcon from '../assets/alliance-icon.png';
@@ -245,65 +244,24 @@ const StatusDot = styled.div`
 const Chat = ({ faction, onChangeFaction, onReturnHome }) => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
-  const [sessionId, setSessionId] = useState('');
   const [error, setError] = useState(null);
   const [isTyping, setIsTyping] = useState(false);
-  const [isConnected, setIsConnected] = useState(true);
   const messagesEndRef = useRef(null);
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
   useEffect(() => {
-    // Obtener o crear sessionId
-    const storedSessionId = localStorage.getItem('wowChatSessionId');
-    if (storedSessionId) {
-      setSessionId(storedSessionId);
-      // Cargar conversación existente
-      loadConversation(storedSessionId);
-    } else {
-      const newSessionId = uuidv4();
-      localStorage.setItem('wowChatSessionId', newSessionId);
-      setSessionId(newSessionId);
-      
-      // Enviar mensaje inicial de presentación
-      sendInitialMessage(newSessionId);
-    }
-  }, [faction]);
+    loadConversation();
+  }, []);
 
-  const sendInitialMessage = async (id) => {
-    setIsTyping(true);
+  const loadConversation = async () => {
     try {
-      const response = await axios.post('https://wow-backend-teal.vercel.app/api/chat/send', {
-        sessionId: id,
-        message: `Iniciar conversación como ${faction}`,
-        faction: faction
-      });
-
-      setMessages([{
-        role: 'assistant',
-        content: response.data.response
-      }]);
-      setIsConnected(true);
-    } catch (error) {
-      console.error('Error al enviar mensaje inicial:', error);
-      setIsConnected(false);
-    } finally {
-      setIsTyping(false);
-    }
-  };
-
-  const loadConversation = async (id) => {
-    try {
-      const response = await axios.get(`https://wow-backend-teal.vercel.app/api/chat/conversation/${id}`);
+      const response = await axios.get(`${API_URL}/chat/conversation`);
       if (response.data.messages) {
         setMessages(response.data.messages);
       }
-      setIsConnected(true);
     } catch (error) {
       console.error('Error al cargar la conversación:', error);
-      // No mostramos error si es 404 (nueva conversación)
-      if (error.response?.status !== 404) {
-        setError('Error al cargar la conversación. Por favor, recarga la página.');
-        setIsConnected(false);
-      }
+      setError('Error al cargar el historial de la conversación');
     }
   };
 
@@ -317,9 +275,8 @@ const Chat = ({ faction, onChangeFaction, onReturnHome }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!input.trim() || isTyping) return;
+    if (!input.trim()) return;
 
-    setError(null);
     const userMessage = {
       role: 'user',
       content: input
@@ -328,85 +285,71 @@ const Chat = ({ faction, onChangeFaction, onReturnHome }) => {
     setMessages(prev => [...prev, userMessage]);
     setInput('');
     setIsTyping(true);
+    setError(null);
 
     try {
-      const response = await axios.post('https://wow-backend-teal.vercel.app/api/chat/send', {
-        sessionId,
-        message: input,
-        faction: faction
+      const response = await axios.post(`${API_URL}/chat/send`, {
+        message: input
       });
 
-      setMessages(prev => [...prev, {
+      const botMessage = {
         role: 'assistant',
         content: response.data.response
-      }]);
-      setIsConnected(true);
+      };
+
+      setMessages(prev => [...prev, botMessage]);
     } catch (error) {
       console.error('Error al enviar mensaje:', error);
-      const errorMessage = error.response?.data?.details || 'Error al procesar tu mensaje. Por favor, intenta de nuevo.';
-      setError(errorMessage);
-      setIsConnected(false);
-      setMessages(prev => [...prev, {
-        role: 'assistant',
-        content: 'Lo siento, ha ocurrido un error al procesar tu mensaje.'
-      }]);
+      setError('Error al enviar el mensaje. Por favor, intenta de nuevo.');
     } finally {
       setIsTyping(false);
     }
   };
 
   const handleChangeFaction = () => {
-    localStorage.removeItem('wowChatSessionId');
     onChangeFaction();
   };
 
   const getFactionTitle = () => {
-    return faction === 'alliance' ? 'Chat con la Alianza' : 'Chat con la Horda';
+    return faction === 'alliance' ? 'Alianza' : 'Horda';
   };
 
   return (
     <ChatContainer $faction={faction}>
       <ChatHeader>
-        <HeaderButton onClick={onReturnHome}>
-          🏠 Inicio
-        </HeaderButton>
-        <ChatTitle>{getFactionTitle()}</ChatTitle>
+        <HeaderButton onClick={onReturnHome}>Volver</HeaderButton>
+        <ChatTitle>Chat de World of Warcraft - {getFactionTitle()}</ChatTitle>
         <HeaderButton onClick={handleChangeFaction}>
-          ⚔️ Cambiar Facción
+          Cambiar a {faction === 'alliance' ? 'Horda' : 'Alianza'}
         </HeaderButton>
-        <StatusIndicator>
-          <StatusDot $connected={isConnected} />
-          {isConnected ? 'Conectado' : 'Desconectado'}
-        </StatusIndicator>
       </ChatHeader>
-      
+
       <MessagesContainer>
         {messages.map((message, index) => (
-          <Message key={index} $isUser={message.role === 'user'} $faction={faction}>
-            <MessageIcon
+          <Message 
+            key={index} 
+            $isUser={message.role === 'user'} 
+            $faction={faction}
+          >
+            <MessageIcon 
               src={message.role === 'user' 
                 ? (faction === 'alliance' ? allianceIcon : hordeIcon)
                 : (faction === 'alliance' ? allianceIcon : hordeIcon)
-              }
-              alt={faction === 'alliance' ? 'Alianza' : 'Horda'}
+              } 
+              alt={message.role === 'user' ? 'Usuario' : 'Bot'}
             />
             <MessageContent>{message.content}</MessageContent>
           </Message>
         ))}
-        
         {isTyping && (
           <Message $isUser={false} $faction={faction}>
-            <MessageIcon
-              src={faction === 'alliance' ? allianceIcon : hordeIcon}
-              alt={faction === 'alliance' ? 'Alianza' : 'Horda'}
-            />
-            <TypingIndicator>Escribiendo</TypingIndicator>
+            <MessageIcon src={faction === 'alliance' ? allianceIcon : hordeIcon} alt="Bot" />
+            <TypingIndicator>Escribiendo...</TypingIndicator>
           </Message>
         )}
-        
         {error && (
-          <ErrorMessage $isUser={false}>
-            ⚠️ {error}
+          <ErrorMessage $isUser={false} $faction={faction}>
+            <MessageContent>{error}</MessageContent>
           </ErrorMessage>
         )}
         <div ref={messagesEndRef} />
@@ -418,11 +361,11 @@ const Chat = ({ faction, onChangeFaction, onReturnHome }) => {
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder={`Habla con ${faction === 'alliance' ? 'la Alianza' : 'la Horda'}...`}
+            placeholder={`Escribe un mensaje para la ${getFactionTitle()}...`}
             disabled={isTyping}
           />
           <SendButton type="submit" disabled={isTyping || !input.trim()}>
-            {isTyping ? '...' : 'Enviar'}
+            Enviar
           </SendButton>
         </InputForm>
       </InputContainer>
