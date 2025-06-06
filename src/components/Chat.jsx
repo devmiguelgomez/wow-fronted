@@ -469,6 +469,70 @@ const Chat = ({ faction, onChangeFaction, onReturnHome }) => {
     navigate('/login');
   };
 
+  const handleSendMessage = async (e) => {
+    e.preventDefault();
+    if (!input.trim() || !currentConversation) return;
+
+    const userMessage = {
+      role: 'user',
+      content: input
+    };
+
+    // Añadir el mensaje del usuario inmediatamente
+    setMessages(prev => [...prev, userMessage]);
+    setInput('');
+    setError(null);
+    setIsTyping(true);
+
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        // Si no hay token, redirigir al login
+        handleLogout();
+        return; // Salir de la función
+      }
+
+      // Usamos axios para enviar el mensaje al backend
+      const response = await axios.post(`https://wow-backend-teal.vercel.app/api/chat/send`, {
+        conversationId: currentConversation,
+        message: userMessage.content,
+        faction: faction
+      }, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      // La respuesta exitosa de axios está en response.data
+      const { response: botResponse } = response.data; // Desestructuramos la respuesta del bot
+
+      // Añadir la respuesta del bot al estado de mensajes
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: botResponse
+      }]);
+      setIsConnected(true);
+
+    } catch (err) {
+      console.error('Error al enviar mensaje:', err);
+      setIsConnected(false);
+
+      // Determinar el mensaje de error a mostrar
+      const errorMessage = err.response?.data?.message || err.message || 'Error desconocido al enviar mensaje.';
+      
+      // Añadir un mensaje de error al chat
+      setMessages(prev => [...prev, { role: 'assistant', content: `Error: ${errorMessage}` }]);
+
+      // Si el error es 401, redirigir al login
+      if (err.response?.status === 401) {
+          handleLogout();
+      }
+    } finally {
+      setIsTyping(false);
+    }
+  };
+
   return (
     <ChatContainer $faction={faction}>
       <ChatHeader>
