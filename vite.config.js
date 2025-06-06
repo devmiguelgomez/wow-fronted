@@ -11,15 +11,17 @@ export default defineConfig({
   assetsInclude: ['**/*.jpg', '**/*.png', '**/*.svg'],
   resolve: {
     alias: {
-      'styled-components': 'styled-components'
+      'styled-components': 'styled-components',
+      'axios': 'axios'
     }
   },
   build: {
     rollupOptions: {
-      external: ['styled-components'],
+      external: ['styled-components', 'axios'],
       output: {
         globals: {
-          'styled-components': 'styled'
+          'styled-components': 'styled',
+          'axios': 'axios'
         }
       }
     }
