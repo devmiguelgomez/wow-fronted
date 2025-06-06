@@ -99,21 +99,23 @@ const App = () => {
   }
 
   return (
-    <Router>
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route
-          path="/chat"
-          element={
-            <PrivateRoute>
-              <Chat />
-            </PrivateRoute>
-          }
-        />
-        <Route path="/" element={<Navigate to="/login" />} />
-      </Routes>
-    </Router>
+    <div className="min-h-screen bg-gray-900">
+      <Router>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route
+            path="/chat"
+            element={
+              <PrivateRoute>
+                <Chat />
+              </PrivateRoute>
+            }
+          />
+          <Route path="/" element={<Navigate to="/login" />} />
+        </Routes>
+      </Router>
+    </div>
   )
 }
 

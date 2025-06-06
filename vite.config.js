@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
-// https://vite.dev/config/
+// https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
   server: {
@@ -9,4 +9,19 @@ export default defineConfig({
     port: 5173
   },
   assetsInclude: ['**/*.jpg', '**/*.png', '**/*.svg'],
+  resolve: {
+    alias: {
+      'styled-components': 'styled-components'
+    }
+  },
+  build: {
+    rollupOptions: {
+      external: ['styled-components'],
+      output: {
+        globals: {
+          'styled-components': 'styled'
+        }
+      }
+    }
+  }
 })
