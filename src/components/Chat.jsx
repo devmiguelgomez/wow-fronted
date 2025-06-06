@@ -269,7 +269,8 @@ const Chat = () => {
       const response = await fetch('http://localhost:5000/api/chat/history', {
         headers: {
           'Authorization': `Bearer ${token}`
-        }
+        },
+        credentials: 'include'
       });
 
       if (!response.ok) {
@@ -318,6 +319,7 @@ const Chat = () => {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
+        credentials: 'include',
         body: JSON.stringify({
           message: userMessage,
           faction
