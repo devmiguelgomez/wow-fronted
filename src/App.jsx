@@ -3,9 +3,10 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import Login from './components/Login';
 import Register from './components/Register';
 import Chat from './components/Chat';
-import LoadingScreen from './components/LoadingScreen'
-import FactionSelection from './components/FactionSelection'
-import styled, { createGlobalStyle } from 'styled-components'
+import LoadingScreen from './components/LoadingScreen';
+import FactionSelection from './components/FactionSelection';
+import styled, { createGlobalStyle } from 'styled-components';
+import '@fontsource/cinzel';
 
 const GlobalStyle = createGlobalStyle`
   * {
@@ -33,13 +34,14 @@ const GlobalStyle = createGlobalStyle`
     margin: 0;
     padding: 0;
   }
-`
+`;
 
 const AppContainer = styled.div`
   min-height: 100vh;
-  background-color: #1a1a1a;
   width: 100%;
-`
+  display: flex;
+  flex-direction: column;
+`;
 
 const PrivateRoute = ({ children }) => {
   const token = localStorage.getItem('token');
@@ -47,60 +49,47 @@ const PrivateRoute = ({ children }) => {
 };
 
 const App = () => {
-  const [loading, setLoading] = useState(true)
-  const [selectedFaction, setSelectedFaction] = useState(null)
-  const [showFactionSelection, setShowFactionSelection] = useState(false)
+  const [loading, setLoading] = useState(true);
+  const [selectedFaction, setSelectedFaction] = useState(null);
+  const [showFactionSelection, setShowFactionSelection] = useState(false);
 
   useEffect(() => {
-    // Aumentar el tiempo de carga para que coincida con la barra de progreso
-    const timer = setTimeout(() => setLoading(false), 3000)
-    return () => clearTimeout(timer)
-  }, [])
+    const timer = setTimeout(() => setLoading(false), 3000);
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
-    // Verificar si ya hay una facción seleccionada
-    const storedFaction = localStorage.getItem('wowSelectedFaction')
+    const storedFaction = localStorage.getItem('wowSelectedFaction');
     if (storedFaction) {
-      setSelectedFaction(storedFaction)
+      setSelectedFaction(storedFaction);
     } else {
-      setShowFactionSelection(true)
+      setShowFactionSelection(true);
     }
-  }, [])
+  }, []);
 
   const handleFactionSelect = (faction) => {
-    setSelectedFaction(faction)
-    setShowFactionSelection(false)
-    localStorage.setItem('wowSelectedFaction', faction)
-    // Limpiar sesión anterior para nueva facción
-    localStorage.removeItem('wowChatSessionId')
-  }
+    setSelectedFaction(faction);
+    setShowFactionSelection(false);
+    localStorage.setItem('wowSelectedFaction', faction);
+    localStorage.removeItem('wowChatSessionId');
+  };
 
   const handleChangeFaction = () => {
-    setShowFactionSelection(true)
-    setSelectedFaction(null)
-    localStorage.removeItem('wowSelectedFaction')
-    localStorage.removeItem('wowChatSessionId')
-  }
+    setShowFactionSelection(true);
+    setSelectedFaction(null);
+    localStorage.removeItem('wowSelectedFaction');
+    localStorage.removeItem('wowChatSessionId');
+  };
 
   const handleReturnHome = () => {
-    setShowFactionSelection(true)
-    setSelectedFaction(null)
-    localStorage.removeItem('wowSelectedFaction')
-    localStorage.removeItem('wowChatSessionId')
-  }
+    setShowFactionSelection(true);
+    setSelectedFaction(null);
+    localStorage.removeItem('wowSelectedFaction');
+    localStorage.removeItem('wowChatSessionId');
+  };
 
-  const renderCurrentScreen = () => {
-    if (loading) return <LoadingScreen />
-    if (showFactionSelection || !selectedFaction) {
-      return <FactionSelection onFactionSelect={handleFactionSelect} />
-    }
-    return (
-      <Chat 
-        faction={selectedFaction} 
-        onChangeFaction={handleChangeFaction}
-        onReturnHome={handleReturnHome}
-      />
-    )
+  if (loading) {
+    return <LoadingScreen />;
   }
 
   return (
@@ -111,18 +100,26 @@ const App = () => {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route
-            path="/chat"
+            path="/"
             element={
               <PrivateRoute>
-                <Chat />
+                {showFactionSelection || !selectedFaction ? (
+                  <FactionSelection onFactionSelect={handleFactionSelect} />
+                ) : (
+                  <Chat
+                    faction={selectedFaction}
+                    onChangeFaction={handleChangeFaction}
+                    onReturnHome={handleReturnHome}
+                  />
+                )}
               </PrivateRoute>
             }
           />
-          <Route path="/" element={<Navigate to="/login" />} />
+          <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </Router>
     </AppContainer>
-  )
-}
+  );
+};
 
-export default App
+export default App;

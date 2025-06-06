@@ -17,6 +17,11 @@ const typing = keyframes`
   51%, 100% { opacity: 0; }
 `;
 
+const glow = keyframes`
+  0%, 100% { box-shadow: 0 0 20px rgba(255, 209, 0, 0.3); }
+  50% { box-shadow: 0 0 30px rgba(255, 209, 0, 0.6); }
+`;
+
 const ChatContainer = styled.div`
   display: flex;
   flex-direction: column;
@@ -44,6 +49,10 @@ const ChatTitle = styled.h1`
   font-size: 2rem;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
   flex: 1;
+  background: linear-gradient(45deg, #FFD100, #FFA500);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 `;
 
 const HeaderButton = styled.button`
@@ -243,30 +252,26 @@ const StatusDot = styled.div`
   animation: ${props => props.$connected ? '' : typing} 2s infinite;
 `;
 
-const Chat = () => {
+const Chat = ({ faction, onChangeFaction, onReturnHome }) => {
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
-  const [faction, setFaction] = useState('alliance');
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef(null);
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Verificar si el usuario está autenticado
     const token = localStorage.getItem('token');
     if (!token) {
       navigate('/login');
       return;
     }
-
-    // Cargar historial de chat
     loadChatHistory();
   }, [navigate]);
 
   const loadChatHistory = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/chat/history', {
+      const response = await fetch('https://wow-backend-teal.vercel.app/api/chat/history', {
         headers: {
           'Authorization': `Bearer ${token}`
         },
@@ -313,7 +318,7 @@ const Chat = () => {
     setInputMessage('');
 
     try {
-      const response = await fetch('http://localhost:5000/api/chat/send', {
+      const response = await fetch('https://wow-backend-teal.vercel.app/api/chat/send', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -353,71 +358,51 @@ const Chat = () => {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-gray-900">
-      <div className="bg-gray-800 p-4 flex justify-between items-center">
-        <div className="flex items-center space-x-4">
-          <select
-            value={faction}
-            onChange={(e) => setFaction(e.target.value)}
-            className="bg-gray-700 text-white p-2 rounded"
-          >
-            <option value="alliance">Alianza</option>
-            <option value="horde">Horda</option>
-          </select>
-          <span className="text-white">
-            {faction === 'alliance' ? 'Alianza' : 'Horda'}
-          </span>
-        </div>
-        <button
-          onClick={handleLogout}
-          className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
-        >
+    <ChatContainer $faction={faction}>
+      <ChatHeader>
+        <HeaderButton onClick={onReturnHome}>
+          Cambiar Facción
+        </HeaderButton>
+        <ChatTitle>
+          {faction === 'alliance' ? 'ALIANZA' : 'HORDA'}
+        </ChatTitle>
+        <HeaderButton onClick={handleLogout}>
           Cerrar Sesión
-        </button>
-      </div>
+        </HeaderButton>
+      </ChatHeader>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <MessagesContainer>
         {messages.map((message, index) => (
-          <div
-            key={index}
-            className={`flex ${
-              message.role === 'user' ? 'justify-end' : 'justify-start'
-            }`}
+          <Message 
+            key={index} 
+            $isUser={message.role === 'user'}
+            $faction={faction}
           >
-            <div
-              className={`max-w-[70%] rounded-lg p-3 ${
-                message.role === 'user'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-700 text-white'
-              }`}
-            >
-              {message.content}
-            </div>
-          </div>
+            <MessageIcon 
+              src={message.role === 'user' ? (faction === 'alliance' ? allianceIcon : hordeIcon) : (faction === 'alliance' ? allianceIcon : hordeIcon)} 
+              alt={message.role === 'user' ? 'Usuario' : 'NPC'} 
+            />
+            <MessageContent>{message.content}</MessageContent>
+          </Message>
         ))}
         <div ref={messagesEndRef} />
-      </div>
+      </MessagesContainer>
 
-      <form onSubmit={handleSubmit} className="p-4 bg-gray-800">
-        <div className="flex space-x-4">
-          <input
+      <InputContainer>
+        <InputForm onSubmit={handleSubmit}>
+          <Input
             type="text"
             value={inputMessage}
             onChange={(e) => setInputMessage(e.target.value)}
             placeholder="Escribe tu mensaje..."
-            className="flex-1 p-2 rounded bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:outline-none"
             disabled={isLoading}
           />
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 disabled:opacity-50"
-          >
+          <SendButton type="submit" disabled={isLoading}>
             {isLoading ? 'Enviando...' : 'Enviar'}
-          </button>
-        </div>
-      </form>
-    </div>
+          </SendButton>
+        </InputForm>
+      </InputContainer>
+    </ChatContainer>
   );
 };
 
