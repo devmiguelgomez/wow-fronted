@@ -9,13 +9,6 @@ export default defineConfig({
     port: 5173
   },
   assetsInclude: ['**/*.jpg', '**/*.png', '**/*.svg'],
-  resolve: {
-    alias: {
-      'styled-components': 'styled-components',
-      'axios': 'axios',
-      'uuid': 'uuid'
-    }
-  },
   build: {
     rollupOptions: {
       external: ['styled-components', 'axios', 'uuid'],
