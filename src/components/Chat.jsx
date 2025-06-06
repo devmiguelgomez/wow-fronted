@@ -247,7 +247,7 @@ const Chat = ({ faction, onChangeFaction, onReturnHome }) => {
   const [error, setError] = useState(null);
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef(null);
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+  const API_URL = import.meta.env.VITE_API_URL || 'https://wow-backend-teal.vercel.app/api';
 
   useEffect(() => {
     loadConversation();
