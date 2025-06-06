@@ -1,12 +1,11 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './components/Login';
 import Register from './components/Register';
 import Chat from './components/Chat';
 import LoadingScreen from './components/LoadingScreen'
 import FactionSelection from './components/FactionSelection'
-import { createGlobalStyle } from 'styled-components'
-import { useState, useEffect } from 'react'
+import styled, { createGlobalStyle } from 'styled-components'
 
 const GlobalStyle = createGlobalStyle`
   * {
@@ -34,6 +33,12 @@ const GlobalStyle = createGlobalStyle`
     margin: 0;
     padding: 0;
   }
+`
+
+const AppContainer = styled.div`
+  min-height: 100vh;
+  background-color: #1a1a1a;
+  width: 100%;
 `
 
 const PrivateRoute = ({ children }) => {
@@ -99,7 +104,8 @@ const App = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-900">
+    <AppContainer>
+      <GlobalStyle />
       <Router>
         <Routes>
           <Route path="/login" element={<Login />} />
@@ -115,7 +121,7 @@ const App = () => {
           <Route path="/" element={<Navigate to="/login" />} />
         </Routes>
       </Router>
-    </div>
+    </AppContainer>
   )
 }
 
