@@ -1,5 +1,27 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import styled, { keyframes } from 'styled-components';
+import '@fontsource/cinzel';
+
+const fadeIn = keyframes`
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+`;
+
+const AuthContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  width: 100%;
+  background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)),
+              url('/zGg9N1o.jpg') center/cover no-repeat;
+  background-attachment: fixed;
+  font-family: 'Cinzel', serif;
+  color: #FFD100; // Color general, aunque el texto del formulario puede ser diferente
+  animation: ${fadeIn} 1s ease-out;
+`;
 
 const Register = () => {
   const [username, setUsername] = useState('');
@@ -30,15 +52,15 @@ const Register = () => {
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
       
-      // Redirigir al chat
-      navigate('/chat');
+      // Redirigir a la ruta principal (/), que manejará la selección de facción
+      navigate('/');
     } catch (err) {
       setError(err.message);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-900">
+    <AuthContainer>
       <div className="bg-gray-800 p-8 rounded-lg shadow-lg w-96">
         <h2 className="text-2xl font-bold text-white mb-6 text-center">Registro</h2>
         {error && (
@@ -103,7 +125,7 @@ const Register = () => {
           </button>
         </p>
       </div>
-    </div>
+    </AuthContainer>
   );
 };
 

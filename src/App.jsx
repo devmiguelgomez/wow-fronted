@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import Login from './components/Login';
 import Register from './components/Register';
 import Chat from './components/Chat';
@@ -45,47 +45,48 @@ const AppContainer = styled.div`
 
 const PrivateRoute = ({ children }) => {
   const token = localStorage.getItem('token');
-  return token ? children : <Navigate to="/login" />;
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  if (!token) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  const selectedFaction = localStorage.getItem('wowSelectedFaction');
+
+  if (!selectedFaction && location.pathname !== '/') {
+    return <Navigate to="/" state={{ from: location }} replace />;
+  }
+
+  return children;
 };
 
 const App = () => {
   const [loading, setLoading] = useState(true);
-  const [selectedFaction, setSelectedFaction] = useState(null);
-  const [showFactionSelection, setShowFactionSelection] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 3000);
+    const timer = setTimeout(() => setLoading(false), 1000);
     return () => clearTimeout(timer);
   }, []);
 
-  useEffect(() => {
-    const storedFaction = localStorage.getItem('wowSelectedFaction');
-    if (storedFaction) {
-      setSelectedFaction(storedFaction);
-    } else {
-      setShowFactionSelection(true);
-    }
-  }, []);
-
   const handleFactionSelect = (faction) => {
-    setSelectedFaction(faction);
-    setShowFactionSelection(false);
     localStorage.setItem('wowSelectedFaction', faction);
     localStorage.removeItem('wowChatSessionId');
+    navigate('/');
   };
 
   const handleChangeFaction = () => {
-    setShowFactionSelection(true);
-    setSelectedFaction(null);
     localStorage.removeItem('wowSelectedFaction');
     localStorage.removeItem('wowChatSessionId');
+    navigate('/');
   };
 
   const handleReturnHome = () => {
-    setShowFactionSelection(true);
-    setSelectedFaction(null);
     localStorage.removeItem('wowSelectedFaction');
     localStorage.removeItem('wowChatSessionId');
+    navigate('/');
   };
 
   if (loading) {
@@ -103,19 +104,22 @@ const App = () => {
             path="/"
             element={
               <PrivateRoute>
-                {showFactionSelection || !selectedFaction ? (
-                  <FactionSelection onFactionSelect={handleFactionSelect} />
-                ) : (
+                {localStorage.getItem('wowSelectedFaction') ? (
                   <Chat
-                    faction={selectedFaction}
+                    faction={localStorage.getItem('wowSelectedFaction')}
                     onChangeFaction={handleChangeFaction}
                     onReturnHome={handleReturnHome}
                   />
+                ) : (
+                  <FactionSelection onFactionSelect={handleFactionSelect} />
                 )}
               </PrivateRoute>
             }
           />
-          <Route path="*" element={<Navigate to="/" />} />
+          {!localStorage.getItem('token') && (location.pathname !== '/login' && location.pathname !== '/register') && (
+               <Route path="*" element={<Navigate to="/login" />} />
+          )}
+          {localStorage.getItem('token') && location.pathname !== '/' && <Route path="*" element={<Navigate to="/" />} />}
         </Routes>
       </Router>
     </AppContainer>
