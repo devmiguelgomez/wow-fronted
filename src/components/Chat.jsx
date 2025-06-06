@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import styled, { keyframes } from 'styled-components';
 import axios from 'axios';
+import { v4 as uuidv4 } from 'uuid';
 import '@fontsource/cinzel';
 import hordeIcon from '../assets/horde-icon.png';
 import allianceIcon from '../assets/alliance-icon.png';
+import { useNavigate } from 'react-router-dom';
 
 const fadeIn = keyframes`
   0% { opacity: 0; transform: translateY(20px); }
@@ -241,40 +243,130 @@ const StatusDot = styled.div`
   animation: ${props => props.$connected ? '' : typing} 2s infinite;
 `;
 
+const Sidebar = styled.div`
+  width: 300px;
+  background-color: #fff;
+  border-right: 1px solid #e0e0e0;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+`;
+
+const ChatArea = styled.div`
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+`;
+
+const MessageList = styled.div`
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  background-color: #fff;
+  border-radius: 10px;
+  margin-bottom: 20px;
+`;
+
+const MessageInput = styled.div`
+  display: flex;
+  gap: 10px;
+`;
+
+const NewChatButton = styled(HeaderButton)`
+  margin-bottom: 20px;
+`;
+
+const ConversationList = styled.div`
+  flex: 1;
+  overflow-y: auto;
+`;
+
+const ConversationItem = styled.div`
+  padding: 10px;
+  margin-bottom: 5px;
+  border-radius: 5px;
+  cursor: pointer;
+  background-color: ${props => props.active ? '#e8f0fe' : 'transparent'};
+  
+  &:hover {
+    background-color: #f5f5f5;
+  }
+`;
+
+const LogoutButton = styled(HeaderButton)`
+  margin-top: auto;
+  background-color: #dc3545;
+  
+  &:hover {
+    background-color: #c82333;
+  }
+`;
+
 const Chat = ({ faction, onChangeFaction, onReturnHome }) => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
+  const [sessionId, setSessionId] = useState('');
   const [error, setError] = useState(null);
   const [isTyping, setIsTyping] = useState(false);
+  const [isConnected, setIsConnected] = useState(true);
   const messagesEndRef = useRef(null);
-  const API_URL = 'https://wow-backend-teal.vercel.app/api';
+  const [conversations, setConversations] = useState([]);
+  const [currentConversation, setCurrentConversation] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    loadConversation();
-  }, []);
-
-  const loadConversation = async () => {
-    try {
-      const response = await axios.get(`${API_URL}/chat/conversation`, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        }
-      });
+    // Obtener o crear sessionId
+    const storedSessionId = localStorage.getItem('wowChatSessionId');
+    if (storedSessionId) {
+      setSessionId(storedSessionId);
+      // Cargar conversación existente
+      loadConversation(storedSessionId);
+    } else {
+      const newSessionId = uuidv4();
+      localStorage.setItem('wowChatSessionId', newSessionId);
+      setSessionId(newSessionId);
       
-      if (response.data && response.data.messages) {
+      // Enviar mensaje inicial de presentación
+      sendInitialMessage(newSessionId);
+    }
+  }, [faction]);
+
+  const sendInitialMessage = async (id) => {
+    setIsTyping(true);
+    try {
+      const response = await axios.post('https://wow-backend-teal.vercel.app/api/chat/send', {
+        sessionId: id,
+        message: `Iniciar conversación como ${faction}`,
+        faction: faction
+      });
+
+      setMessages([{
+        role: 'assistant',
+        content: response.data.response
+      }]);
+      setIsConnected(true);
+    } catch (error) {
+      console.error('Error al enviar mensaje inicial:', error);
+      setIsConnected(false);
+    } finally {
+      setIsTyping(false);
+    }
+  };
+
+  const loadConversation = async (id) => {
+    try {
+      const response = await axios.get(`https://wow-backend-teal.vercel.app/api/chat/conversation/${id}`);
+      if (response.data.messages) {
         setMessages(response.data.messages);
-      } else {
-        setMessages([]);
       }
+      setIsConnected(true);
     } catch (error) {
       console.error('Error al cargar la conversación:', error);
-      if (error.response) {
-        setError(`Error al cargar el historial: ${error.response.status} - ${error.response.statusText}`);
-      } else if (error.request) {
-        setError('No se pudo conectar con el servidor. Por favor, verifica tu conexión.');
-      } else {
-        setError('Error al cargar el historial de la conversación');
+      // No mostramos error si es 404 (nueva conversación)
+      if (error.response?.status !== 404) {
+        setError('Error al cargar la conversación. Por favor, recarga la página.');
+        setIsConnected(false);
       }
     }
   };
@@ -289,8 +381,9 @@ const Chat = ({ faction, onChangeFaction, onReturnHome }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!input.trim()) return;
+    if (!input.trim() || isTyping) return;
 
+    setError(null);
     const userMessage = {
       role: 'user',
       content: input
@@ -299,85 +392,126 @@ const Chat = ({ faction, onChangeFaction, onReturnHome }) => {
     setMessages(prev => [...prev, userMessage]);
     setInput('');
     setIsTyping(true);
-    setError(null);
 
     try {
-      const response = await axios.post(`${API_URL}/chat/send`, {
-        message: input
-      }, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        }
+      const response = await axios.post('https://wow-backend-teal.vercel.app/api/chat/send', {
+        sessionId,
+        message: input,
+        faction: faction
       });
 
-      if (response.data && response.data.response) {
-        const botMessage = {
-          role: 'assistant',
-          content: response.data.response
-        };
-        setMessages(prev => [...prev, botMessage]);
-      } else {
-        throw new Error('Respuesta inválida del servidor');
-      }
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: response.data.response
+      }]);
+      setIsConnected(true);
     } catch (error) {
       console.error('Error al enviar mensaje:', error);
-      if (error.response) {
-        setError(`Error al enviar el mensaje: ${error.response.status} - ${error.response.statusText}`);
-      } else if (error.request) {
-        setError('No se pudo conectar con el servidor. Por favor, verifica tu conexión.');
-      } else {
-        setError('Error al enviar el mensaje. Por favor, intenta de nuevo.');
-      }
+      const errorMessage = error.response?.data?.details || 'Error al procesar tu mensaje. Por favor, intenta de nuevo.';
+      setError(errorMessage);
+      setIsConnected(false);
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: 'Lo siento, ha ocurrido un error al procesar tu mensaje.'
+      }]);
     } finally {
       setIsTyping(false);
     }
   };
 
   const handleChangeFaction = () => {
+    localStorage.removeItem('wowChatSessionId');
     onChangeFaction();
   };
 
   const getFactionTitle = () => {
-    return faction === 'alliance' ? 'Alianza' : 'Horda';
+    return faction === 'alliance' ? 'Chat con la Alianza' : 'Chat con la Horda';
+  };
+
+  const loadConversations = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:3000/api/conversations', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const data = await response.json();
+      setConversations(data);
+    } catch (error) {
+      console.error('Error al cargar conversaciones:', error);
+    }
+  };
+
+  const createNewConversation = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:3000/api/conversations', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ title: 'Nueva conversación' })
+      });
+      const data = await response.json();
+      setConversations([...conversations, data]);
+      setCurrentConversation(data._id);
+      setMessages([]);
+    } catch (error) {
+      console.error('Error al crear conversación:', error);
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    navigate('/login');
   };
 
   return (
     <ChatContainer $faction={faction}>
       <ChatHeader>
-        <HeaderButton onClick={onReturnHome}>Volver</HeaderButton>
-        <ChatTitle>Chat de World of Warcraft - {getFactionTitle()}</ChatTitle>
-        <HeaderButton onClick={handleChangeFaction}>
-          Cambiar a {faction === 'alliance' ? 'Horda' : 'Alianza'}
+        <HeaderButton onClick={onReturnHome}>
+          🏠 Inicio
         </HeaderButton>
+        <ChatTitle>{getFactionTitle()}</ChatTitle>
+        <HeaderButton onClick={handleChangeFaction}>
+          ⚔️ Cambiar Facción
+        </HeaderButton>
+        <StatusIndicator>
+          <StatusDot $connected={isConnected} />
+          {isConnected ? 'Conectado' : 'Desconectado'}
+        </StatusIndicator>
       </ChatHeader>
-
+      
       <MessagesContainer>
         {messages.map((message, index) => (
-          <Message 
-            key={index} 
-            $isUser={message.role === 'user'} 
-            $faction={faction}
-          >
-            <MessageIcon 
+          <Message key={index} $isUser={message.role === 'user'} $faction={faction}>
+            <MessageIcon
               src={message.role === 'user' 
                 ? (faction === 'alliance' ? allianceIcon : hordeIcon)
                 : (faction === 'alliance' ? allianceIcon : hordeIcon)
-              } 
-              alt={message.role === 'user' ? 'Usuario' : 'Bot'}
+              }
+              alt={faction === 'alliance' ? 'Alianza' : 'Horda'}
             />
             <MessageContent>{message.content}</MessageContent>
           </Message>
         ))}
+        
         {isTyping && (
           <Message $isUser={false} $faction={faction}>
-            <MessageIcon src={faction === 'alliance' ? allianceIcon : hordeIcon} alt="Bot" />
-            <TypingIndicator>Escribiendo...</TypingIndicator>
+            <MessageIcon
+              src={faction === 'alliance' ? allianceIcon : hordeIcon}
+              alt={faction === 'alliance' ? 'Alianza' : 'Horda'}
+            />
+            <TypingIndicator>Escribiendo</TypingIndicator>
           </Message>
         )}
+        
         {error && (
-          <ErrorMessage $isUser={false} $faction={faction}>
-            <MessageContent>{error}</MessageContent>
+          <ErrorMessage $isUser={false}>
+            ⚠️ {error}
           </ErrorMessage>
         )}
         <div ref={messagesEndRef} />
@@ -389,14 +523,34 @@ const Chat = ({ faction, onChangeFaction, onReturnHome }) => {
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder={`Escribe un mensaje para la ${getFactionTitle()}...`}
+            placeholder={`Habla con ${faction === 'alliance' ? 'la Alianza' : 'la Horda'}...`}
             disabled={isTyping}
           />
           <SendButton type="submit" disabled={isTyping || !input.trim()}>
-            Enviar
+            {isTyping ? '...' : 'Enviar'}
           </SendButton>
         </InputForm>
       </InputContainer>
+
+      <Sidebar>
+        <NewChatButton onClick={createNewConversation}>
+          Nueva Conversación
+        </NewChatButton>
+        <ConversationList>
+          {conversations.map(conv => (
+            <ConversationItem
+              key={conv._id}
+              active={conv._id === currentConversation}
+              onClick={() => loadConversation(conv._id)}
+            >
+              {conv.title}
+            </ConversationItem>
+          ))}
+        </ConversationList>
+        <LogoutButton onClick={handleLogout}>
+          Cerrar Sesión
+        </LogoutButton>
+      </Sidebar>
     </ChatContainer>
   );
 };

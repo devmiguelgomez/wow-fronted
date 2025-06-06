@@ -194,19 +194,17 @@ export default function FactionSelection({ onFactionSelect }) {
   const hordeMusic = useAudio('/audio/horde.mp3');
 
   useEffect(() => {
-    if (backgroundMusic.isReady) {
-      backgroundMusic.play();
-    }
+    backgroundMusic.play();
     return () => {
       backgroundMusic.stop();
     };
-  }, [backgroundMusic.isReady]);
+  }, []);
 
   const handleFactionSelect = (faction) => {
     backgroundMusic.stop();
-    if (faction === 'alliance' && allianceMusic.isReady) {
+    if (faction === 'alliance') {
       allianceMusic.play();
-    } else if (faction === 'horde' && hordeMusic.isReady) {
+    } else {
       hordeMusic.play();
     }
     onFactionSelect(faction);
