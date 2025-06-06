@@ -140,7 +140,10 @@ const Register = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json'
         },
+        mode: 'cors',
+        credentials: 'include',
         body: JSON.stringify({ username, email, password }),
       });
 
@@ -150,7 +153,6 @@ const Register = () => {
         throw new Error(data.message || 'Error al registrar usuario');
       }
 
-      // Guardar token y datos del usuario
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
       
