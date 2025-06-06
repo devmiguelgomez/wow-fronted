@@ -265,13 +265,13 @@ const Chat = ({ faction, onChangeFaction, onReturnHome }) => {
       navigate('/login');
       return;
     }
-    loadChatHistory();
-  }, [navigate]);
+    loadChatHistory(faction);
+  }, [navigate, faction]);
 
-  const loadChatHistory = async () => {
+  const loadChatHistory = async (currentFaction) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('https://wow-backend-teal.vercel.app/api/chat/history', {
+      const response = await fetch(`https://wow-backend-teal.vercel.app/api/chat/history?faction=${currentFaction}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         },
@@ -283,15 +283,10 @@ const Chat = ({ faction, onChangeFaction, onReturnHome }) => {
       }
 
       const data = await response.json();
-      setMessages(data.chatHistory.map(msg => ({
-        role: 'user',
-        content: msg.message
-      }, {
-        role: 'assistant',
-        content: msg.response
-      })));
+      setMessages(data.chatHistory);
     } catch (error) {
       console.error('Error al cargar el historial:', error);
+      setMessages(prev => [...prev, { role: 'assistant', content: 'Error al cargar el historial de chat.' }]);
     }
   };
 
@@ -317,6 +312,8 @@ const Chat = ({ faction, onChangeFaction, onReturnHome }) => {
     const userMessage = inputMessage;
     setInputMessage('');
 
+    setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
+
     try {
       const response = await fetch('https://wow-backend-teal.vercel.app/api/chat/send', {
         method: 'POST',
@@ -336,14 +333,10 @@ const Chat = ({ faction, onChangeFaction, onReturnHome }) => {
       }
 
       const data = await response.json();
-      setMessages(prev => [...prev, 
-        { role: 'user', content: userMessage },
-        { role: 'assistant', content: data.response }
-      ]);
+      setMessages(prev => [...prev, { role: 'assistant', content: data.response }]);
     } catch (error) {
       console.error('Error:', error);
       setMessages(prev => [...prev, 
-        { role: 'user', content: userMessage },
         { role: 'assistant', content: 'Lo siento, ha ocurrido un error. Por favor, intenta de nuevo.' }
       ]);
     } finally {
@@ -364,7 +357,7 @@ const Chat = ({ faction, onChangeFaction, onReturnHome }) => {
           Cambiar Facción
         </HeaderButton>
         <ChatTitle>
-          {faction === 'alliance' ? 'ALIANZA' : 'HORDA'}
+          {faction.toUpperCase()}
         </ChatTitle>
         <HeaderButton onClick={handleLogout}>
           Cerrar Sesión
