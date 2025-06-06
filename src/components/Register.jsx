@@ -1,130 +1,5 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import styled, { keyframes } from 'styled-components';
-import '@fontsource/cinzel';
-
-const fadeIn = keyframes`
-  0% { opacity: 0; transform: translateY(20px); }
-  100% { opacity: 1; transform: translateY(0); }
-`;
-
-const Container = styled.div`
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)),
-              url('/wow-background.jpg') center/cover;
-  font-family: 'Cinzel', serif;
-`;
-
-const FormContainer = styled.div`
-  background: rgba(0, 0, 0, 0.9);
-  padding: 2rem;
-  border-radius: 10px;
-  width: 400px;
-  border: 2px solid #FFD100;
-  box-shadow: 0 0 20px rgba(255, 209, 0, 0.3);
-  animation: ${fadeIn} 0.8s ease-out;
-`;
-
-const Title = styled.h2`
-  color: #FFD100;
-  text-align: center;
-  margin-bottom: 2rem;
-  font-size: 2rem;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-`;
-
-const ErrorMessage = styled.div`
-  background: rgba(139, 0, 0, 0.9);
-  border: 1px solid #ff6b6b;
-  color: #ffcccc;
-  padding: 1rem;
-  border-radius: 5px;
-  margin-bottom: 1rem;
-  font-style: italic;
-`;
-
-const Form = styled.form`
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-`;
-
-const InputGroup = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-`;
-
-const Label = styled.label`
-  color: #FFD100;
-  font-size: 1rem;
-  font-weight: bold;
-`;
-
-const Input = styled.input`
-  padding: 0.8rem;
-  border: 2px solid #FFD100;
-  border-radius: 5px;
-  background: rgba(0, 0, 0, 0.7);
-  color: #FFD100;
-  font-family: 'Cinzel', serif;
-  transition: all 0.3s ease;
-
-  &:focus {
-    outline: none;
-    box-shadow: 0 0 10px rgba(255, 209, 0, 0.5);
-    background: rgba(0, 0, 0, 0.8);
-  }
-
-  &::placeholder {
-    color: rgba(255, 209, 0, 0.6);
-  }
-`;
-
-const ButtonGroup = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 1rem;
-`;
-
-const Button = styled.button`
-  background: linear-gradient(45deg, #FFD100, #FFA500);
-  border: none;
-  color: #000;
-  padding: 0.8rem 1.5rem;
-  border-radius: 5px;
-  cursor: pointer;
-  font-family: 'Cinzel', serif;
-  font-weight: bold;
-  transition: all 0.3s ease;
-
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(255, 209, 0, 0.4);
-  }
-
-  &:active {
-    transform: translateY(0);
-  }
-`;
-
-const LoginLink = styled.button`
-  background: none;
-  border: none;
-  color: #FFD100;
-  cursor: pointer;
-  font-family: 'Cinzel', serif;
-  text-decoration: underline;
-  transition: all 0.3s ease;
-
-  &:hover {
-    color: #FFA500;
-  }
-`;
 
 const Register = () => {
   const [username, setUsername] = useState('');
@@ -136,26 +11,25 @@ const Register = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch('https://wow-backend-teal.vercel.app/api/auth/register', {
+      const response = await fetch('http://localhost:5000/api/auth/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Accept': 'application/json'
         },
-        mode: 'cors',
-        credentials: 'include',
         body: JSON.stringify({ username, email, password }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || 'Error al registrar usuario');
+        throw new Error(data.message || 'Error en el registro');
       }
 
+      // Guardar token y datos del usuario
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
       
+      // Redirigir al chat
       navigate('/chat');
     } catch (err) {
       setError(err.message);
@@ -163,53 +37,72 @@ const Register = () => {
   };
 
   return (
-    <Container>
-      <FormContainer>
-        <Title>Registro</Title>
-        {error && <ErrorMessage>{error}</ErrorMessage>}
-        <Form onSubmit={handleSubmit}>
-          <InputGroup>
-            <Label htmlFor="username">Nombre de Usuario</Label>
-            <Input
+    <div className="min-h-screen flex items-center justify-center bg-gray-900">
+      <div className="bg-gray-800 p-8 rounded-lg shadow-lg w-96">
+        <h2 className="text-2xl font-bold text-white mb-6 text-center">Registro</h2>
+        {error && (
+          <div className="bg-red-500 text-white p-3 rounded mb-4">
+            {error}
+          </div>
+        )}
+        <form onSubmit={handleSubmit}>
+          <div className="mb-4">
+            <label className="block text-gray-300 mb-2" htmlFor="username">
+              Nombre de Usuario
+            </label>
+            <input
               type="text"
               id="username"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              placeholder="Ingresa tu nombre de usuario"
+              className="w-full p-2 rounded bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:outline-none"
               required
             />
-          </InputGroup>
-          <InputGroup>
-            <Label htmlFor="email">Email</Label>
-            <Input
+          </div>
+          <div className="mb-4">
+            <label className="block text-gray-300 mb-2" htmlFor="email">
+              Email
+            </label>
+            <input
               type="email"
               id="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="Ingresa tu email"
+              className="w-full p-2 rounded bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:outline-none"
               required
             />
-          </InputGroup>
-          <InputGroup>
-            <Label htmlFor="password">Contraseña</Label>
-            <Input
+          </div>
+          <div className="mb-6">
+            <label className="block text-gray-300 mb-2" htmlFor="password">
+              Contraseña
+            </label>
+            <input
               type="password"
               id="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Ingresa tu contraseña"
+              className="w-full p-2 rounded bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:outline-none"
               required
             />
-          </InputGroup>
-          <ButtonGroup>
-            <Button type="submit">Registrarse</Button>
-            <LoginLink onClick={() => navigate('/login')}>
-              Iniciar Sesión
-            </LoginLink>
-          </ButtonGroup>
-        </Form>
-      </FormContainer>
-    </Container>
+          </div>
+          <button
+            type="submit"
+            className="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700 transition-colors"
+          >
+            Registrarse
+          </button>
+        </form>
+        <p className="mt-4 text-center text-gray-400">
+          ¿Ya tienes cuenta?{' '}
+          <button
+            onClick={() => navigate('/login')}
+            className="text-blue-400 hover:text-blue-300"
+          >
+            Inicia Sesión
+          </button>
+        </p>
+      </div>
+    </div>
   );
 };
 

@@ -36,13 +36,12 @@ const GlobalStyle = createGlobalStyle`
   }
 `
 
-// Componente para proteger rutas
 const PrivateRoute = ({ children }) => {
   const token = localStorage.getItem('token');
   return token ? children : <Navigate to="/login" />;
 };
 
-function App() {
+const App = () => {
   const [loading, setLoading] = useState(true)
   const [selectedFaction, setSelectedFaction] = useState(null)
   const [showFactionSelection, setShowFactionSelection] = useState(false)
