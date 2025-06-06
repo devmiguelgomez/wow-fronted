@@ -12,16 +12,18 @@ export default defineConfig({
   resolve: {
     alias: {
       'styled-components': 'styled-components',
-      'axios': 'axios'
+      'axios': 'axios',
+      'uuid': 'uuid'
     }
   },
   build: {
     rollupOptions: {
-      external: ['styled-components', 'axios'],
+      external: ['styled-components', 'axios', 'uuid'],
       output: {
         globals: {
           'styled-components': 'styled',
-          'axios': 'axios'
+          'axios': 'axios',
+          'uuid': 'uuid'
         }
       }
     }
