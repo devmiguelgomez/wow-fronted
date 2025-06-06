@@ -119,7 +119,7 @@ export default function LoadingScreen() {
           clearInterval(interval);
           return 100;
         }
-        return prev + Math.random() * 15 + 5; // Progreso variable
+        return prev + Math.random() * 15 + 5; // Prgreso variable
       });
     }, 200);
 
